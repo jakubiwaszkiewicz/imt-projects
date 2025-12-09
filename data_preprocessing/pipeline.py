@@ -8,7 +8,7 @@ def data_preprocessing_pipeline():
     all_IO_data_regex = "./data_preprocessing/data/01_raw/information_operation/Russia_*/*"
 
     loader = Loader(
-        is_one_file=False,
+        is_one_file=True,
         small_IO_data_regex = small_IO_data_regex,
         all_IO_data_regex = all_IO_data_regex
     )
@@ -20,6 +20,6 @@ def data_preprocessing_pipeline():
 
     data = parsing(data_IO, data_non_IO)
 
-    X, y = vectorizer(data)
+    X, X_texts, y = vectorizer(data)
 
-    return X, y
+    return X, X_texts, y
