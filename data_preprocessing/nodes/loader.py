@@ -18,14 +18,27 @@ class Loader:
             all_IO_files = glob(self.all_IO_data_regex)
         return all_IO_files
 
+    # def IO_data(self):
+    #     all_IO_files = self._files_strategy()
+    #     data_list = []
+    #     for file in all_IO_files:
+    #         parquet = pd.read_parquet(file)
+    #         data_list.append(parquet)
+    #     data = pd.concat(data_list, axis=0, ignore_index=True)
+    #     print(len(data))
+    #     return data
+
     def IO_data(self):
-        all_IO_files = self._files_strategy()
-        data_list = []
-        for file in all_IO_files:
-            parquet = pd.read_parquet(file)
-            data_list.append(parquet)
-        data = pd.concat(data_list, axis=0, ignore_index=True)
+        csv_path = "./data_preprocessing/data/02_csv/Russia_1.csv"
+        data = pd.read_csv(csv_path)
+
+        if "post_time" in data.columns:
+            data["post_time"] = pd.to_datetime(data["post_time"])
+            data = data.sort_values("post_time", ascending=False)
+
+        print(f"Loaded {len(data)} propaganda posts from CSV")
         return data
+
 
     def non_IO_data(self):
         non_IO_data_regex = "./data_preprocessing/data/01_raw/not_information_operation/*.csv"

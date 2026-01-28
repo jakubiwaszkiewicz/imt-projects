@@ -4,7 +4,7 @@ from .nodes.vectorizer import vectorizer
 
 def data_preprocessing_pipeline():
 
-    small_IO_data_regex = "./data_preprocessing/data/01_raw/information_operation/Russia_3/*"
+    small_IO_data_regex = "./data_preprocessing/data/01_raw/information_operation/Russia_1/*"
     all_IO_data_regex = "./data_preprocessing/data/01_raw/information_operation/Russia_*/*"
 
     loader = Loader(
@@ -15,11 +15,12 @@ def data_preprocessing_pipeline():
 
 
     data_IO = loader.IO_data()
-
     data_non_IO = loader.non_IO_data()
+
 
     data = parsing(data_IO, data_non_IO)
 
-    X, y = vectorizer(data)
+    X, X_texts, y = vectorizer(data)
 
-    return X, y
+
+    return X, X_texts, y
