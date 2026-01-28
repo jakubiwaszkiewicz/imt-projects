@@ -1,114 +1,155 @@
 import pandas as pd
 import json
-import tensorflow as tf
-import csv
-from pathlib import Path
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader, TensorDataset
+from transformers import BertTokenizer, BertForSequenceClassification, AdamW
 from sklearn.model_selection import ParameterGrid, RepeatedKFold
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import accuracy_score
+from pathlib import Path
+import csv
+from sklearn.model_selection import train_test_split
 from data_preprocessing.pipeline import data_preprocessing_pipeline
-from model_impl.bert import train_bert
-from transformers import BertTokenizer
+from tqdm import tqdm
 
 CSV_FILE = Path("results.csv")
 csv_fields = [
-    "params", "fold", "epoch", "val_accuracy", "val_f1",
-    "test_accuracy", "test_f1", "train_loss", "val_loss",
-    "learning_rate", "batch_size", "max_len"
+    "params",
+    "fold",
+    "epoch",
+    "val_accuracy",
+    "test_accuracy",
+    "train_loss",
+    "val_loss",
+    "learning_rate",
+    "batch_size",
+    "max_len"
 ]
 
 
 _, texts, y = data_preprocessing_pipeline()
 
-texts = texts[::100]
-y = y[::100].reset_index(drop=True)
+texts, _, y, _ = train_test_split(
+    texts,
+    y,
+    train_size=0.01,
+    stratify=y,
+    random_state=2137
+)
+
+texts = list(texts)
+y = y.reset_index(drop=True)
 
 data_test = pd.read_csv("./data_preprocessing/data/03_test/gt_data.csv", sep=";")
 y_test = data_test.iloc[:, 1].reset_index(drop=True)
-X_test_texts = data_test.iloc[:, 2].reset_index(drop=True)
-
-print(data_test)
-print(y_test)
-print(type(X_test_texts))
+X_test = data_test.iloc[:, 2].astype(str).tolist()
 
 grid_params = {
     "max_len": [64],
-    "epochs": [5],
+    "epochs": [3],
     "batch_size": [128],
-    "learning_rate": [0.001, 0.0001]
+    "learning_rate": [5e-5, 3e-5, 1e-5]
 }
 
-
-kf = RepeatedKFold(n_splits=2, n_repeats=1, random_state=42)
-
+kf = RepeatedKFold(n_splits=5, n_repeats=2, random_state=2137)
 
 if not CSV_FILE.exists():
     with open(CSV_FILE, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=csv_fields)
         writer.writeheader()
 
+device = torch.device("mps")
+
+y = y.tolist()
 
 for params in ParameterGrid(grid_params):
     print(f"Grid params: {params}")
+    tokenizer = BertTokenizer.from_pretrained("bert-base-multilingual-cased")
 
     for fold_idx, (train_idx, val_idx) in enumerate(kf.split(texts)):
         print(f"Fold: {fold_idx}")
 
-        texts_train = [texts[i] for i in train_idx]
-        texts_val = [texts[i] for i in val_idx]
-        y_train = y.iloc[train_idx].reset_index(drop=True)
-        y_val = y.iloc[val_idx].reset_index(drop=True)
+        X_train = [texts[i] for i in train_idx]
+        X_val = [texts[i] for i in val_idx]
 
-        model, results = train_bert(
-            X_texts=texts_train,
-            y=y_train,
-            max_len=params["max_len"],
-            epochs=params["epochs"],
-            batch_size=params["batch_size"],
-            learning_rate=params["learning_rate"]
+
+        y_train_list = [y[i] for i in train_idx]
+        y_val_list = [y[i] for i in val_idx]
+        y_test_list = y_test.tolist()
+
+        y_train = torch.tensor(y_train_list, dtype=torch.long)
+        y_val = torch.tensor(y_val_list, dtype=torch.long)
+        y_test_t = torch.tensor(y_test_list, dtype=torch.long)
+
+        train_enc = tokenizer(X_train, padding=True, truncation=True, max_length=params["max_len"], return_tensors="pt")
+        val_enc = tokenizer(X_val, padding=True, truncation=True, max_length=params["max_len"], return_tensors="pt")
+        test_enc = tokenizer(X_test, padding=True, truncation=True, max_length=params["max_len"], return_tensors="pt")
+
+        train_dataset = TensorDataset(train_enc['input_ids'], train_enc['attention_mask'], y_train)
+        val_dataset = TensorDataset(val_enc['input_ids'], val_enc['attention_mask'], y_val)
+        test_dataset = TensorDataset(test_enc['input_ids'], test_enc['attention_mask'], y_test_t)
+
+        train_loader = DataLoader(train_dataset, batch_size=params["batch_size"], shuffle=True)
+        val_loader = DataLoader(val_dataset, batch_size=params["batch_size"])
+        test_loader = DataLoader(test_dataset, batch_size=params["batch_size"])
+
+        model = BertForSequenceClassification.from_pretrained(
+            "bert-base-multilingual-cased",
+            num_labels=2
         )
 
-        tokenizer = BertTokenizer.from_pretrained("google-bert/bert-base-multilingual-cased")
-        val_enc = tokenizer(
-            texts_val,
-            truncation=True,
-            padding=True,
-            max_length=params["max_len"],
-            return_tensors="tf"
-        )
-        val_dataset = tf.data.Dataset.from_tensor_slices(dict(val_enc)).batch(params["batch_size"])
-        val_logits = model.predict(val_dataset).logits
-        y_val_pred = tf.argmax(val_logits, axis=1).numpy()
-        val_acc = accuracy_score(y_val, y_val_pred)
-        val_f1 = f1_score(y_val, y_val_pred)
+        model.to(device)
 
-        # Ewaluacja na zbiorze testowym polityków
-        test_enc = tokenizer(
-            list(X_test_texts),
-            truncation=True,
-            padding=True,
-            max_length=params["max_len"],
-            return_tensors="tf"
-        )
-        test_dataset = tf.data.Dataset.from_tensor_slices(dict(test_enc)).batch(params["batch_size"])
-        test_logits = model.predict(test_dataset).logits
-        y_test_pred = tf.argmax(test_logits, axis=1).numpy()
-        test_acc = accuracy_score(y_test, y_test_pred)
-        test_f1 = f1_score(y_test, y_test_pred)
+        optimizer = AdamW(model.parameters(), lr=params["learning_rate"])
+        criterion = nn.CrossEntropyLoss()
 
-        # Zapis do CSV
-        with open(CSV_FILE, "a", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=csv_fields)
-            writer.writerow({
-                "params": json.dumps(params),
-                "fold": fold_idx,
-                "epoch": params["epochs"],
-                "val_accuracy": val_acc,
-                "val_f1": val_f1,
-                "test_accuracy": test_acc,
-                "test_f1": test_f1,
-                "train_loss": results["train_loss"],
-                "val_loss": results["val_loss"],
-                "learning_rate": results["learning_rate"],
-                "batch_size": results["batch_size"],
-                "max_len": results["max_len"]
-            })
+        for epoch in range(params["epochs"]):
+            model.train()
+            total_loss = 0
+            for batch in tqdm(train_loader, desc="Training"):
+                input_ids, attention_mask, labels = [b.to(device) for b in batch]
+                optimizer.zero_grad()
+                outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+                loss = criterion(outputs.logits, labels)
+                loss.backward()
+                optimizer.step()
+                total_loss += loss.item()
+            avg_train_loss = total_loss / len(train_loader)
+
+            model.eval()
+            val_preds, val_labels = [], []
+            val_loss = 0
+            with torch.no_grad():
+                for batch in tqdm(val_loader, desc="Validation"):
+                    input_ids, attention_mask, labels = [b.to(device) for b in batch]
+                    outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+                    loss = criterion(outputs.logits, labels)
+                    val_loss += loss.item()
+                    val_preds.extend(torch.argmax(outputs.logits, dim=1).cpu().numpy())
+                    val_labels.extend(labels.cpu().numpy())
+            avg_val_loss = val_loss / len(val_loader)
+            val_acc = accuracy_score(val_labels, val_preds)
+
+            model.eval()
+            test_preds = []
+            with torch.no_grad():
+                for batch in tqdm(test_loader, desc="Test"):
+                    input_ids, attention_mask, labels = [b.to(device) for b in batch]
+                    outputs = model(input_ids=input_ids, attention_mask=attention_mask)
+                    test_preds.extend(torch.argmax(outputs.logits, dim=1).cpu().numpy())
+            test_acc = accuracy_score(y_test, test_preds)
+
+            with open(CSV_FILE, "a", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=csv_fields)
+                writer.writerow({
+                    "params": json.dumps(params),
+                    "fold": fold_idx,
+                    "epoch": epoch + 1,
+                    "train_loss": avg_train_loss,
+                    "val_loss": avg_val_loss,
+                    "val_accuracy": val_acc,
+                    "test_accuracy": test_acc,
+                    "learning_rate": params["learning_rate"],
+                    "batch_size": params["batch_size"],
+                    "max_len": params["max_len"]
+                })
