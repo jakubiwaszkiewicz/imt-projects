@@ -1,0 +1,37 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/26.0.16 Chrome/132.0.6834.196 Electron/34.2.0 Safari/537.36" version="26.0.16">
+  <diagram name="Strona-1" id="WOwAp5Hjppk7LXBSHIKE">
+    <mxGraphModel dx="1430" dy="825" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="wwJ7kSaC9p2h2QilIf6d-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="wwJ7kSaC9p2h2QilIf6d-1" target="wwJ7kSaC9p2h2QilIf6d-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wwJ7kSaC9p2h2QilIf6d-1" value="- output: one-hotencoded data&lt;div&gt;- ETL&lt;br&gt;&lt;div&gt;- stopword&lt;/div&gt;&lt;div&gt;- filtracja&lt;/div&gt;&lt;div&gt;- parsery&lt;br&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- word2vec / tfidf&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- labelki: 1 / 0&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;- output:onehotencoded labeled&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;" vertex="1" parent="1">
+          <mxGeometry x="40" y="115" width="350" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="wwJ7kSaC9p2h2QilIf6d-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="wwJ7kSaC9p2h2QilIf6d-2" target="wwJ7kSaC9p2h2QilIf6d-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="wwJ7kSaC9p2h2QilIf6d-2" value="- input: one-hotencoded data&lt;div&gt;- testowanie na 80%/20%&lt;div&gt;&lt;div&gt;- na podstawie testow - heurystyczny dobor parametrow&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;div&gt;- wykorzystanie gridsearcha&lt;/div&gt;&lt;div&gt;- output: model(-e) + instrukcja evaluacji&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;align=left;" vertex="1" parent="1">
+          <mxGeometry x="530" y="115" width="360" height="185" as="geometry" />
+        </mxCell>
+        <mxCell id="wwJ7kSaC9p2h2QilIf6d-3" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="1050" y="107.5" width="250" height="192.5" as="geometry" />
+        </mxCell>
+        <mxCell id="wwJ7kSaC9p2h2QilIf6d-4" value="1_preprocesing" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="40" y="110" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="wwJ7kSaC9p2h2QilIf6d-5" value="2_model_impl" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="530" y="110" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="wwJ7kSaC9p2h2QilIf6d-6" value="3_results_viz_and_eval" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="110" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="wwJ7kSaC9p2h2QilIf6d-7" value="- input: model(-e)&lt;div&gt;- test tstudenta - tabelka&lt;div&gt;- wizualizacja&lt;/div&gt;&lt;div&gt;- confusin matrix&lt;/div&gt;&lt;div&gt;- obliczenie wspolczynik korelacji (?)&lt;/div&gt;&lt;/div&gt;&lt;div&gt;- output&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1060" y="150" width="220" height="100" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
